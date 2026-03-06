@@ -27,13 +27,15 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.PASSWORD }}" | docker login -u ${{ secrets.USERNAME }} --password-stdin
 
-      - name: Build image
-        run: |
-          docker build -t ${{ secrets.USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }} .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Push image
+      - name: Build and push multi-arch Docker image
         run: |
-          docker push ${{ secrets.USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.set_tag.outputs.tag }}
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.USERNAME }}/k8s-reactjs-itp-gen1:${{ steps.set_tag.outputs.tag }} \
+            --push .
 
       - name: Logout from DockerHub
         if: always()
